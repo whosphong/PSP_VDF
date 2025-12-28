@@ -123,6 +123,20 @@ def estimate_n_wls(
     return float(n_hat)
 
 
+def bulk_velocity_from_samples(data: np.ndarray) -> np.ndarray:
+    """
+    Bulk velocity (normalized first moment) from KDE samples.
+
+    Under a Gaussian KDE, the mean of the KDE equals the sample mean,
+    independent of bandwidth.
+
+    Returns a (3,) vector in km/s.
+    """
+    if data.shape[0] != 3:
+        raise ValueError("Sample array must have shape (3, N)")
+    return data.mean(axis=1)
+
+
 # =========================
 # Plotting
 # =========================
@@ -220,9 +234,14 @@ def main() -> None:
     V, f, K = load_original(args.original)
     n_hat = estimate_n_wls(kde, V, f, K)
 
-    mu = data.mean(axis=1)
+    # Bulk velocity vector (km/s) and bulk speed (km/s)
+    u_vec = bulk_velocity_from_samples(data)
+    u_norm = float(np.linalg.norm(u_vec))
+
     print("KDE fitted successfully")
     print(f"n_hat [cm^-3] = {n_hat:.6e}")
+    print(f"bulk_velocity_vector [km/s] = [{u_vec[0]:.6f}, {u_vec[1]:.6f}, {u_vec[2]:.6f}]")
+    print(f"bulk_speed [km/s] = {u_norm:.6f}")
 
     if args.plot:
         fig_path = args.outdir / f"{args.sampled.stem}_kde_slices_scaled.png"
@@ -238,3 +257,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
